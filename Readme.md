@@ -26,19 +26,35 @@ This project is designed to demonstrate how to record step-by-step try-and-error
 
 ## Prerequisite
 
-You have to install jupyterlab first.
-Here's the guide:
-https://jupyterlab.readthedocs.io/en/stable/getting_started/installation.html
-
-I personally recommand using docker.
-https://jupyter-docker-stacks.readthedocs.io/en/latest/
+You have to install jupyterlab first.  
+Here's the guide:  
+https://jupyterlab.readthedocs.io/en/stable/getting_started/installation.html  
+  
+I personally recommand using docker.  
+https://jupyter-docker-stacks.readthedocs.io/en/latest/  
 
 ## Start
+### Jupyter lab
 1. Fill in the .env file
 2. Start docker
     ```shell
     docker run --rm -p 8888:8888  -v ./:/BilingualNovelTranslator jupyter/minimal-notebook bash -c "\
-    pip install -qU python-dotenv langchain tqdm langchain-google-genai langchain-openai jupyterlab_widgets ipywidgets&& \
-    jupyter lab --ip 0.0.0.0 --ContentsManager.allow_hidden=True --allow-root --notebook-dir='/BilingualNovelTranslator' --NotebookApp.token=''"
+    pip install -qU python-dotenv langchain tqdm \
+    langchain-google-genai langchain-openai jupyterlab_widgets ipywidgets && \
+    jupyter lab --ip 0.0.0.0 --ContentsManager.allow_hidden=True \
+    --allow-root --notebook-dir='/BilingualNovelTranslator' --NotebookApp.token=''"
     ```
+    **Note**: Always remember to pip install the following libraries
+    ```shell
+        pip install -qU python-dotenv langchain tqdm langchain-google-genai langchain-openai jupyterlab_widgets ipywidgets
+    ```
+
 3. Open 127.0.0.1:8888 in your browser
+
+###  console
+```shell
+pip install -qU python-dotenv langchain tqdm langchain-google-genai langchain-openai
+
+python bilingual_translator.py alice_in_wonderland.txt
+
+```

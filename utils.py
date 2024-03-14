@@ -112,17 +112,17 @@ The output should be a markdown code snippet formatted in the following json sch
 ```json
 [
     {{
-        "correction": string  // the sentence after error correction
+        "correction": string  // the sentence after error correction from original
         "zh-tw": string  // the translated sentence zh-tw
     }},
     {{
-        "correction": string  // the sentence after error correction
+        "correction": string  // the sentence after error correction from original
         "zh-tw": string  // the translated sentence zh-tw
     }},
     .......
     ........
     {{
-        "correction": string  // the sentence after error correction
+        "correction": string  // the sentence after error correction from original
         "zh-tw": string  // the translated sentence zh-tw
     }}
 ]
@@ -172,7 +172,21 @@ The original paragraph is as following:
     print(f"using llm: {llm}")
     chain = prompt | llm | StrOutputParser()
     translated=[]
-    from tqdm.notebook import tqdm, trange
+    import sys, os
+
+    if 'ipykernel' in sys.modules: # Jupyter lab
+        from tqdm.notebook import tqdm
+    else:
+        from tqdm import tqdm
+
+
+    if start<=0:
+        start=0
+        try:
+            os.remove(target_file)
+        except OSError:
+            pass
+
     errorindx = -1
     with tqdm(total=len(paragraphs)) as progress_bar:
         for i, paragraph in enumerate(paragraphs):
