@@ -92,7 +92,87 @@ def _repair_markdown_json(bad_markdown_json):
             print(f"Error decoding JSON in block: {match}")
     return "\n".join(["```json"] + merged_list +["```\n"])
 
-def autoprocess_paragraph(llm, paragraphs, target_file, start=0):
+
+def llm_fix_json(llm, markdown_string, maxtries=1):
+    import re
+    import json
+    from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
+    from langchain_core.output_parsers.string import StrOutputParser
+    prompt = PromptTemplate.from_template(
+"""You are a professional javascript engineer. Your task is to validate the json format.
+
+There will be a code snippet formatted in json schema,
+You should check if the code snippet is well formated in json and fix it if necessary.
+
+Make sure the final json format is correct and output the validated json code, do not print anything else.
+
+Make sure all json keys and values are marked with correct double quotation mark(")
+The following quotations marks are not identical to double quotation mark(")
+
+「 」 “ ” ' 。
+
+The output should be a markdown code snippet formatted in the following json schema, including the leading and trailing "```json" and "```":
+--------
+Example output:
+```json
+[
+    {{
+        "key1" : "value1",
+        "key2" : "value2"
+    }},
+    {{
+        "key1" : "value3",
+        "key2" : "value4"
+    }},
+    {{
+        "key1" : "value5",
+        "key2" : "value6"
+    }}
+]
+"```
+
+Here's the error message about the code snippet
+{err_msg}
+
+The original code snippet is as following:
+
+{input}
+
+""")
+    chain = prompt | llm | StrOutputParser()
+    pattern = re.compile(r"```json(.*?)```", re.DOTALL)
+    first_matche = pattern.search(markdown_string)
+
+    if not first_matche:
+        return markdown_string
+    
+    first_matche = first_matche.group(1)
+    retry=0
+    temp = first_matche
+    while retry < maxtries:  # We retry to fix this 3 times, if we cannot fix it, just don'y touch it.
+        try:
+            json_data = json.loads(temp.strip())
+            first_matche = temp.strip()
+            break
+        except json.JSONDecodeError as e:
+            error_hint = str(e)
+            retry += 1
+            temp2 = chain.invoke({"input": temp, "err_msg":error_hint})
+            temp2 = pattern.search(temp2)
+            if retry == maxtries or not temp2:
+                print("Unable to fix Json:\n")
+                print(f"{first_matche}\n")
+                print(f"{error_hint}\n")
+                break
+            temp = temp2.group(1)            
+            continue
+    
+    return "```json\n" + first_matche + "```\n"
+
+
+
+
+def autoprocess_paragraph(llm, paragraphs, target_file, llm_json=True, start=0):
     from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
     from langchain_core.output_parsers.string import StrOutputParser
     prompt = PromptTemplate.from_template(
@@ -206,28 +286,15 @@ The original paragraph is as following:
                     print(paragraph)
                     print(e)
                     errorindx = i
-                    return errorindx,translated;
-                    
+                    return errorindx,translated
+                if llm_json:
+                    temp = llm_fix_json(llm, temp)
                 temp = _repair_markdown_json(temp)
-                # retry=0
-                # temp2 = temp
-                # while retry < 3:  # We retry to fix this 3 times, if we cannot fix it, just don'y touch it.
-                #     err_msg = verify_json(temp2)
-                #     if err_msg:
-                #         temp2 = fix_json(llm, temp2, err_msg)
-                #         retry += 1
-                #         if retry == 3:
-                #             print("Invalid Json:\n")
-                #             print(f"{temp}\n")
-                #             print(f"{err_msg}\n")
-                #         continue
-                #     temp = temp2
-                #     break;
+
                         
                 translated.append(temp)
                 with open(target_file, 'a+') as f:
                     f.write(temp)
                     f.write('\n')
             progress_bar.update(1)
-    return errorindx,translated;
-
+    return errorindx,translated

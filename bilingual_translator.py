@@ -139,7 +139,7 @@ def do(args):
 
 def main():
     
-    parser = argparse.ArgumentParser(description='Bilangual Novel Parser')
+    parser = argparse.ArgumentParser(description='Bilingual Novel Parser')
 
 
 
